@@ -2,30 +2,24 @@
 trigger:
   branches:
     include:
-      - main  # Replace with the branch you want to trigger the pipeline on
+      - main # Trigger the pipeline on commits to the main branch
 
 pool:
-  vmImage: 'ubuntu-latest'  # Using Ubuntu as the build agent
+  vmImage: 'ubuntu-latest' # Use an Ubuntu agent to run the pipeline
 
-stages:
-- stage: Build
-  jobs:
-  - job: BuildJob
-    steps:
-    - task: Maven@3
-      inputs:
-        mavenPomFile: 'pom.xml'  # Path to your pom.xml file
-        goals: 'clean package'   # Maven goals to run
-        options: '-X'            # Optional: Use -X for more detailed logs (optional)
-        mavenVersionOption: 'Default'
-        javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.8'  # You can choose other versions such as '11' or '17'
-        publishJUnitResults: true
-        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '6.x' # Install .NET SDK version 6.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
 
-    # Optional: Copy artifacts after build
-    - task: PublishBuildArtifacts@1
-      inputs:
-        PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Publish the target directory
-        ArtifactName: 'drop'
-        publishLocation: 'Container'
+- script: |
+    dotnet restore # Restore NuGet packages
+    dotnet build --configuration Release # Build the project
+  displayName: 'Restore and Build'
+
+- script: |
+    dotnet test --configuration Release # Run unit tests
+  displayName: 'Run Tests'
+
