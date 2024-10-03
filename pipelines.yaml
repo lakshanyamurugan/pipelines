@@ -1,0 +1,31 @@
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+      - main  # Replace with the branch you want to trigger the pipeline on
+
+pool:
+  vmImage: 'ubuntu-latest'  # Using Ubuntu as the build agent
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: Maven@3
+      inputs:
+        mavenPomFile: 'pom.xml'  # Path to your pom.xml file
+        goals: 'clean package'   # Maven goals to run
+        options: '-X'            # Optional: Use -X for more detailed logs (optional)
+        mavenVersionOption: 'Default'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.8'  # You can choose other versions such as '11' or '17'
+        publishJUnitResults: true
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+
+    # Optional: Copy artifacts after build
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Publish the target directory
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
